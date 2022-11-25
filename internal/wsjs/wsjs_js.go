@@ -1,3 +1,4 @@
+//go:build js
 // +build js
 
 // Package wsjs implements typed access to the browser javascript WebSocket API.
@@ -126,6 +127,10 @@ func (c WebSocket) OnMessage(fn func(m MessageEvent)) (remove func()) {
 // Subprotocol returns the WebSocket subprotocol in use.
 func (c WebSocket) Subprotocol() string {
 	return c.v.Get("protocol").String()
+}
+
+func (c WebSocket) BufferedAmount() int {
+	return c.v.Get("bufferedAmount").Int()
 }
 
 // OnOpen registers a function to be called when the WebSocket is opened.

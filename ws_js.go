@@ -233,6 +233,10 @@ func (c *Conn) Subprotocol() string {
 	return c.ws.Subprotocol()
 }
 
+func (c *Conn) BufferedAmount() int {
+	return c.ws.BufferedAmount()
+}
+
 // DialOptions represents the options available to pass to Dial.
 type DialOptions struct {
 	// Subprotocols lists the subprotocols to negotiate with the server.

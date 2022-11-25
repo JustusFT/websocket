@@ -38,7 +38,7 @@ import (
 // A received StatusNormalClosure or StatusGoingAway close frame will be translated to
 // io.EOF when reading.
 func NetConn(ctx context.Context, c *Conn, msgType MessageType) net.Conn {
-	nc := &netConn{
+	nc := &NetConnData{
 		c:       c,
 		msgType: msgType,
 	}
@@ -59,7 +59,7 @@ func NetConn(ctx context.Context, c *Conn, msgType MessageType) net.Conn {
 	return nc
 }
 
-type netConn struct {
+type NetConnData struct {
 	c       *Conn
 	msgType MessageType
 
@@ -74,13 +74,13 @@ type netConn struct {
 	reader io.Reader
 }
 
-var _ net.Conn = &netConn{}
+var _ net.Conn = &NetConnData{}
 
-func (c *netConn) Close() error {
+func (c *NetConnData) Close() error {
 	return c.c.Close(StatusNormalClosure, "")
 }
 
-func (c *netConn) Write(p []byte) (int, error) {
+func (c *NetConnData) Write(p []byte) (int, error) {
 	err := c.c.Write(c.writeContext, c.msgType, p)
 	if err != nil {
 		return 0, err
@@ -88,7 +88,7 @@ func (c *netConn) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-func (c *netConn) Read(p []byte) (int, error) {
+func (c *NetConnData) Read(p []byte) (int, error) {
 	c.readMu.Lock()
 	defer c.readMu.Unlock()
 
@@ -133,21 +133,21 @@ func (a websocketAddr) String() string {
 	return "websocket/unknown-addr"
 }
 
-func (c *netConn) RemoteAddr() net.Addr {
+func (c *NetConnData) RemoteAddr() net.Addr {
 	return websocketAddr{}
 }
 
-func (c *netConn) LocalAddr() net.Addr {
+func (c *NetConnData) LocalAddr() net.Addr {
 	return websocketAddr{}
 }
 
-func (c *netConn) SetDeadline(t time.Time) error {
+func (c *NetConnData) SetDeadline(t time.Time) error {
 	c.SetWriteDeadline(t)
 	c.SetReadDeadline(t)
 	return nil
 }
 
-func (c *netConn) SetWriteDeadline(t time.Time) error {
+func (c *NetConnData) SetWriteDeadline(t time.Time) error {
 	if t.IsZero() {
 		c.writeTimer.Stop()
 	} else {
@@ -156,11 +156,15 @@ func (c *netConn) SetWriteDeadline(t time.Time) error {
 	return nil
 }
 
-func (c *netConn) SetReadDeadline(t time.Time) error {
+func (c *NetConnData) SetReadDeadline(t time.Time) error {
 	if t.IsZero() {
 		c.readTimer.Stop()
 	} else {
 		c.readTimer.Reset(t.Sub(time.Now()))
 	}
 	return nil
+}
+
+func (c *NetConnData) BufferedAmount() int {
+	return c.c.BufferedAmount()
 }
